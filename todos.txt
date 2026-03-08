@@ -1,6 +1,6 @@
 Testbench / testbenches
 
-@CURRENT - Awaiting updates to API regarding encapsulation and hidden states / date overwriting.
+@CURRENT - We have assertions being triggerd in the apad api without knowing where in the local code base. Figure out solution.
 
 Dates
 	- <=[date] less than or equal to [date]

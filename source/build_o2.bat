@@ -5,6 +5,6 @@ pushd build
 
 cl /nologo /w /I..\..\lib64 /Fetasks /O2 ..\main.cpp ..\..\lib64\*.lib
 
-move calendar.exe ..\..
+move todos.exe ..\..
 
 popd

@@ -27,7 +27,7 @@ const char* ValidOptions[] =   { "-s", "-da", "-dd", "-t" };
 BeginEnum(ValidOptionsIndex) { TaskString, DateAdded, DateDue, Tags, Length } EndEnum(ValidOptionsIndex);
 
 
-struct taskListEntry {
+struct todoListEntry {
 	const char* task;
 	const char* dateAdded;
 	const char* dateDue;
@@ -44,7 +44,7 @@ struct taskListEntry {
 ConsoleAppEntryPoint(args, argsCount) {
 	#ifdef APAD_DEBUG
 		#if 1
-		char* debugArgs[] = { args[0], "add", "-s", "task text", "-t", "tag1", "tag2", "-dd", "20/03" };
+		char* debugArgs[] = { args[0], "add", "sample task" };
 		args = debugArgs;
 		argsCount = GetArrayLength(debugArgs);	
 		#endif
@@ -87,7 +87,6 @@ ConsoleAppEntryPoint(args, argsCount) {
 	#define CheckArgsExit() if(it >= argsCount) \
 														PrintErrorExit("Not enough arguments supplied.");
 			
-	
 	// Parse options
 	FromTo(2, argsCount) {
 		const char* arg = args[it];
@@ -248,34 +247,32 @@ ConsoleAppEntryPoint(args, argsCount) {
 	}	
 	
 	#ifdef APAD_DEBUG
-	const char* dataPath = "..\\..\\data\\tasklist.txt";
+	const char* dataPath = "..\\..\\data\\todos.txt";
 	#else
-	const char* dataPath = "data/tasklist.txt";
+	const char* dataPath = "data/todos.txt";
 	#endif
 	
-	// Open the tasks file and generate task list
-	file tasksFile = {};
+	// Open the todos file and generate task list
+	file todosFile = {};
 	{
-		 
-				
 		if(Win32FileExists(dataPath) == false) // @TODO - Replace with File API function once bug is fixed
-			PrintErrorExit("Couldn't find data/tasklist.txt\n");
+			PrintErrorExit("Couldn't find data/todos.txt\n");
 		
-		tasksFile = Win32LoadFile(dataPath); // @TODO - Replace with File API function once bug is fixed
+		todosFile = Win32LoadFile(dataPath); // @TODO - Replace with File API function once bug is fixed
 		if(ErrorIsSet() == true)
-			PrintErrorExit("Couldn't load data/tasklist.txt");
+			PrintErrorExit("Couldn't load data/todos.txt");
 		
 		#if 0
 		
 		// Parse tasks - see data/format.txt
 		
 		// Extract data
-		auto  taskList = AllocateStack(128);
+		auto  todoList = AllocateStack(128);
 		auto  line = AllocateStack(128);
 		char* data = Null;
 		bool  readingTaskString = false;
-		for(ui32 it = 0; it < tasksFile.size; it += 1) {
-			char* c = (char*)tasksFile.memory + it;
+		for(ui32 it = 0; it < todosFile.size; it += 1) {
+			char* c = (char*)todosFile.memory + it;
 			
 			if(*c == '"') {
 				if(readingTaskString == false)
@@ -288,7 +285,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 			
 			if(*c == '\n') { // Add task to list
 				#if 0
-				struct taskListEntry {
+				struct todoListEntry {
 					const char* task;
 					const char* dateAdded;
 					const char* dateDue;
@@ -300,8 +297,8 @@ ConsoleAppEntryPoint(args, argsCount) {
 				
 				Assert(line.size % sizeof(char*) == 0);
 				char** lineArray = (char**)line.memory;
-				auto*  task = (taskListEntry*)Push(sizeof(taskListEntry), taskList);
-				ClearMemory(task, sizeof(taskListEntry));
+				auto*  task = (todoListEntry*)Push(sizeof(todoListEntry), todoList);
+				ClearMemory(task, sizeof(todoListEntry));
 				task->task = lineArray[0];
 				task->dateAdded = lineArray[1]; // @TODO - We're getting an access violation here for some reason.
 				PreventCompilation;
@@ -467,8 +464,8 @@ ConsoleAppEntryPoint(args, argsCount) {
 	
 	// @TODO - Renable
 	#if 0
-	if(IsValid(tasksFile) == true)
-		FreeMemory(tasksFile); // @TODO - Replace with File API function once bug is fixed
+	if(IsValid(todosFile) == true)
+		FreeMemory(todosFile); // @TODO - Replace with File API function once bug is fixed
 	#endif
 	
 	printf("\n");
