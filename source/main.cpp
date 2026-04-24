@@ -1,5 +1,3 @@
-#define APAD_DEBUG
-
 #include <stdio.h>
 #define _CRT_SECURE_NO_WARNINGS
 #include <time.h>
@@ -23,8 +21,8 @@ const ui8 	MaxTags = 5;
 const char* ValidCommands[] = 	{ "add", "list", "del", "mod", "undo", "redo" };
 BeginEnum(ValidCommandsIndex) { Add, List, Delete, Modify, Undo, Redo, Length } EndEnum(ValidCommandsIndex);
 
-const char* ValidOptions[] =   { "-s", "-da", "-dd", "-t" };
-BeginEnum(ValidOptionsIndex) { TaskString, DateAdded, DateDue, Tags, Length } EndEnum(ValidOptionsIndex);
+const char* ValidArguments[] =   { "-s", "-da", "-dd", "-t" };
+BeginEnum(ValidArgumentsIndex) { TaskString, DateAdded, DateDue, Tags, Length } EndEnum(ValidArgumentsIndex);
 
 
 struct todoListEntry {
@@ -53,10 +51,10 @@ ConsoleAppEntryPoint(args, argsCount) {
 	if(argsCount == 1) {
 		printf("Usage: %s [add] [list] [del | delete] [mod | modify] [undo] [redo]\n\n", args[0]);
 		printf("Options\n");
-		printf("	%s  [<text string>]                 task text\n", (const char*)ValidOptions[ValidOptionsIndex::TaskString]);
-		printf("	%s [dd/mm | dd/mm/yyyy]            date added\n", (const char*)ValidOptions[ValidOptionsIndex::DateAdded]);
-		printf("	%s [dd/mm | dd/mm/yyyy | +ddd[w]]  date due\n", (const char*)ValidOptions[ValidOptionsIndex::DateDue]);
-		printf("	%s  [<tags>...]                     string tags (up to 5)\n", (const char*)ValidOptions[ValidOptionsIndex::Tags]);
+		printf("	%s  [<text string>]                 task text\n", (const char*)ValidArguments[ValidArgumentsIndex::TaskString]);
+		printf("	%s [dd/mm | dd/mm/yyyy]            date added\n", (const char*)ValidArguments[ValidArgumentsIndex::DateAdded]);
+		printf("	%s [dd/mm | dd/mm/yyyy | +ddd[w]]  date due\n", (const char*)ValidArguments[ValidArgumentsIndex::DateDue]);
+		printf("	%s  [<tags>...]                     string tags (up to 5)\n", (const char*)ValidArguments[ValidArgumentsIndex::Tags]);
 		// @TODO - Add what options can be specified with every command, figure out a simple way
 		goto program_exit;
 	}
@@ -87,21 +85,21 @@ ConsoleAppEntryPoint(args, argsCount) {
 	#define CheckArgsExit() if(it >= argsCount) \
 														PrintErrorExit("Not enough arguments supplied.");
 			
-	// Parse options
+	// Parse arguments
 	FromTo(2, argsCount) {
 		const char* arg = args[it];
 		
-		if(StringsAreEqual(arg, ValidOptions[ValidOptionsIndex::TaskString]) == true) {
+		if(StringsAreEqual(arg, ValidArguments[ValidArgumentsIndex::TaskString]) == true) {
 			it += 1;
 			CheckArgsExit();
 			taskString = args[it]; // @TODO - Check correctness
 		}
-		else if(StringsAreEqual(arg, ValidOptions[ValidOptionsIndex::DateAdded]) == true) {
+		else if(StringsAreEqual(arg, ValidArguments[ValidArgumentsIndex::DateAdded]) == true) {
 			it += 1;
 			CheckArgsExit();
 			dateAdded = args[it]; // @TODO - Check correctness
 		}
-		else if(StringsAreEqual(arg, ValidOptions[ValidOptionsIndex::DateDue]) == true) {
+		else if(StringsAreEqual(arg, ValidArguments[ValidArgumentsIndex::DateDue]) == true) {
 			it += 1;
 			CheckArgsExit();
 			dateDue = args[it]; // @TODO - Check correctness
@@ -112,7 +110,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 			else
 				PrintErrorExit("Incorrect date due format");
 		}
-		else if(StringsAreEqual(arg, ValidOptions[ValidOptionsIndex::Tags]) == true) {
+		else if(StringsAreEqual(arg, ValidArguments[ValidArgumentsIndex::Tags]) == true) {
 			// Scan arguments and store up to MaxTags or end of arguments so long as none are valid options
 			ui8 count = 0;
 			while(count < MaxTags) {

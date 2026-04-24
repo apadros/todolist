@@ -1,6 +1,30 @@
-Testbench / testbenches
+Key
+	@WIP
+	@PRIORITY
+	
+Core commands
+	- Add
+		- Testing @WIP
+	- List
+		- Testing
+	- Delete
+		- Testing
+	- Reschedule
+		- Testing
+	- Modify
+		- Testing
+	- Undo
+		- Testing
+	- Redo
+		- Testing
+	
+Command arguments
+	- Task string (-s)
+	- Date added (-da)
+	- Date due (-dd)
+	- Tages (-t)
 
-@CURRENT - We have assertions being triggerd in the apad api without knowing where in the local code base. Figure out solution.
+Testbench / testbenches
 
 Dates
 	- <=[date] less than or equal to [date]
