@@ -24,14 +24,6 @@ BeginEnum(ValidCommandsIndex) { Add, List, Delete, Modify, Undo, Redo, Length } 
 const char* ValidArguments[] =   { "-s", "-da", "-dd", "-t" };
 BeginEnum(ValidArgumentsIndex) { TaskString, DateAdded, DateDue, Tags, Length } EndEnum(ValidArgumentsIndex);
 
-struct todoListEntry {
-	const char* task;
-	const char* dateAdded;
-	const char* dateDue;
-				char  flag;
-	const char* tags[MaxTags];
-};
-
 #include <stdio.h>
 #define PrintErrorExit(_string) { \
 	printf("ERROR: %s\n", _string); \
@@ -44,12 +36,12 @@ void ExitFunction() {
 
 ConsoleAppEntryPoint(args, argsCount) {
 	SetDisplayAPIAssertions(true);
-	SetCallExitInAPIAssertions(false);
-	SetExitIfAssertionHit(false);
+	SetCallExitInAPIAssertions(true);
+	SetExitIfAssertionHit(true);
 	
 	#ifdef APAD_DEBUG
 		#if 1
-		char* debugArgs[] = { args[0], "add", "sample task" };
+		char* debugArgs[] = { args[0], "add", "-s", "test task" };
 		args = debugArgs;
 		argsCount = GetArrayLength(debugArgs);	
 		#endif
@@ -71,7 +63,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 	const char* command;
 	const char* taskString;
 	const char* dateAdded;
-	const char* dateDue;
+	const char* dateDue = Null;
 	const char* tags[MaxTags] = { Null };
 
 	// Parse and check command
@@ -266,6 +258,15 @@ ConsoleAppEntryPoint(args, argsCount) {
 	
 	// Open the todos file and generate task list
 	file todosFile = {};
+	
+	struct todoListEntry {
+		char* task;
+		char* dateAdded;
+		char* dateDue;
+		char* tags[MaxTags];
+	};
+	memory_stack todoList;
+	
 	{
 		if(FileExists(dataPath) == false)
 			PrintErrorExit("Couldn't find data/todos.txt\n");
@@ -274,77 +275,52 @@ ConsoleAppEntryPoint(args, argsCount) {
 		if(AssertionWasHit() == true)
 			PrintErrorExit("Couldn't load data/todos.txt");
 		
-		#if 0
-		
-		// Parse tasks - see data/format.txt
-		
 		// Extract data
-		auto  todoList = AllocateStack(128);
-		auto  line = AllocateStack(128);
-		char* data = Null;
-		bool  readingTaskString = false;
+		todoList = AllocateStack(Null);
+		todoListEntry* entry = Null;
+		bool readingData = false;
 		for(ui32 it = 0; it < todosFile.size; it += 1) {
 			char* c = (char*)todosFile.memory + it;
 			
 			if(*c == '"') {
-				if(readingTaskString == false)
-					data = c + 1;
+				if(readingData == false) {
+					entry = (todoListEntry*)Push(sizeof(todoListEntry), todoList);
+					entry->task = c + 1;
+				}
 				else
-					*c = ' ';
+					*c = '\0';
 				
-				Toggle(readingTaskString);
+				Toggle(readingData);
 			}
-			
-			if(*c == '\n') { // Add task to list
-				#if 0
-				struct todoListEntry {
-					const char* task;
-					const char* dateAdded;
-					const char* dateDue;
-								ui8   reschedulePeriod;
-								char  flag;
-					const char* tags[MaxTags];
-				};
-				#endif
-				
-				Assert(line.size % sizeof(char*) == 0);
-				char** lineArray = (char**)line.memory;
-				auto*  task = (todoListEntry*)Push(sizeof(todoListEntry), todoList);
-				ClearMemory(task, sizeof(todoListEntry));
-				task->task = lineArray[0];
-				task->dateAdded = lineArray[1]; // @TODO - We're getting an access violation here for some reason.
-				PreventCompilation;
-				task->dateDue = lineArray[2];
-				
-				string resc = lineArray[3];
-				if(resc.length == 1 && resc[0] == '-')
-					task->reschedulePeriod = 0;
-				else
-					task->reschedulePeriod = StringToInt(resc);
-				task->flag = *(lineArray[4]);
-				ui8 totalEntries = line.size / sizeof(char*);
-				Assert(totalEntries - 5 <= MaxTags);
-				FromTo(5, totalEntries)
-					task->tags[it - 5] = lineArray[it];
-					
-				ResetStack(line);
+			else if(readingData == false) {
+				if(IsWhitespace(*c) == true)
+					*c = '\0';
+				else if(entry->dateAdded == Null) {
+					entry->dateAdded = c;
+					readingData = true;
+				}
+				else if(entry->dateDue == Null) {
+					entry->dateDue = c;
+					readingData = true;
+				}
+				else { // Tags
+					AddToArray(c, entry->tags, Null);
+					readingData = true;
+				}
 			}
-			
-			if(data == Null && IsWhitespace(*c) == false) // Start of new data
-				data = c;
-			else if(readingTaskString == false && IsWhitespace(*c) == true && data != Null) { // End of current data
-				PushInstance(data, line);
+			else if(readingData == true && IsWhitespace(*c) == true) {
 				*c = '\0';
-				data = Null;
+				readingData = false;
 			}
 		}
-		
-		#endif
 	}
 	
 	// Parse command, output error message if invalid
 	if(StringsAreEqual(command, ValidCommands[ValidCommandsIndex::Add]) == true) {
 		dateAdded = DateToString(GetDate(0));
+		
+		if(dateDue == Null)
+			dateDue = "-";
 				
 		const char* string = Concatenate(7, "\"", taskString, "\" ", dateAdded, " ", dateDue, " ");
 		if(tags[0] == Null)
@@ -357,6 +333,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 		}
 		string = Concatenate(2, string, "\r\n"); 
 		
+		// @TODO - Add to file instead of overwriting it
 		SaveFile((void*)string, GetStringLength(string), dataPath);
 		
 		printf("\nTask added\n");
