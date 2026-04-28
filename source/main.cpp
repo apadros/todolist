@@ -278,21 +278,22 @@ ConsoleAppEntryPoint(args, argsCount) {
 		// Extract data
 		todoList = AllocateStack(Null);
 		todoListEntry* entry = Null;
+		bool readingString = false;
 		bool readingData = false;
 		for(ui32 it = 0; it < todosFile.size; it += 1) {
 			char* c = (char*)todosFile.memory + it;
 			
-			if(*c == '"') {
-				if(readingData == false) {
+			if(*c == '"') { // Read the task string
+				if(readingString == false) {
 					entry = (todoListEntry*)Push(sizeof(todoListEntry), todoList);
 					entry->task = c + 1;
 				}
 				else
 					*c = '\0';
 				
-				Toggle(readingData);
-			}
-			else if(readingData == false) {
+				Toggle(readingString);
+			}			
+			else if(readingString == false && readingData == false) {
 				if(IsWhitespace(*c) == true)
 					*c = '\0';
 				else if(entry->dateAdded == Null) {
@@ -308,7 +309,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 					readingData = true;
 				}
 			}
-			else if(readingData == true && IsWhitespace(*c) == true) {
+			else if(readingString == false && readingData == true && IsWhitespace(*c) == true) {
 				*c = '\0';
 				readingData = false;
 			}
@@ -442,7 +443,6 @@ ConsoleAppEntryPoint(args, argsCount) {
 		// - Keep it simple
 		// When making any changes to an entry, display the updated portion of info 
 		// before and after, then display the updated entry will all info
-
 	}
 	else {
 		PrintErrorExit("Invalid command supplied.\n");
