@@ -257,8 +257,6 @@ ConsoleAppEntryPoint(args, argsCount) {
 	#endif
 	
 	// Open the todos file and generate task list
-	file todosFile = {};
-	
 	struct todoListEntry {
 		char* task;
 		char* dateAdded;
@@ -266,12 +264,12 @@ ConsoleAppEntryPoint(args, argsCount) {
 		char* tags[MaxTags];
 	};
 	memory_stack todoList;
-	
+	ui16 				 todosCount = 0;
 	{
 		if(FileExists(dataPath) == false)
 			PrintErrorExit("Couldn't find data/todos.txt\n");
 		
-		todosFile = LoadFile(dataPath);
+		auto todosFile = LoadFile(dataPath);
 		if(AssertionWasHit() == true)
 			PrintErrorExit("Couldn't load data/todos.txt");
 		
@@ -286,6 +284,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 			if(*c == '"') { // Read the task string
 				if(readingString == false) {
 					entry = (todoListEntry*)Push(sizeof(todoListEntry), todoList);
+					todosCount += 1;
 					entry->task = c + 1;
 				}
 				else
@@ -314,6 +313,8 @@ ConsoleAppEntryPoint(args, argsCount) {
 				readingData = false;
 			}
 		}
+		
+		FreeFile(todosFile);
 	}
 	
 	// Parse command, output error message if invalid
@@ -334,11 +335,37 @@ ConsoleAppEntryPoint(args, argsCount) {
 		}
 		string = Concatenate(2, string, "\r\n"); 
 		
-		// @TODO - Add to file instead of overwriting it
-		SaveFile((void*)string, GetStringLength(string), dataPath);
-		
+		// Create new entry @WIP
+		auto* entry = (todoListEntry*)Push(sizeof(todoListEntry), todoList);
+		todosCount += 1;
+		entry->task = (char*)taskString; 
+		entry->dateAdded = (char*)dateAdded;
+		entry->dateDue = (char*)dateDue;
+		Assert(sizeof(tags) == sizeof(entry->tags));
+		CopyMemory(tags, sizeof(tags), entry->tags);
 		printf("\nTask added\n");
 		PrintDetailedTask(Null, taskString, dateAdded, dateDue, tags);
+		
+		// Save to file
+		auto saveString = AllocateStack(Null);
+		ForAll(todosCount) {
+			auto* entry = (todoListEntry*)todoList.memory + it;
+			char emptyChar = ' '; // @TODO - Find a bettwe way of doing this -> API mods
+			Push(entry->task, GetStringLength(entry->task), saveString);
+			PushInstance(emptyChar, saveString);
+			Push(entry->dateAdded, GetStringLength(entry->dateAdded), saveString);
+			PushInstance(emptyChar, saveString);
+			Push(entry->dateDue, GetStringLength(entry->dateDue), saveString);
+			ForAll(MaxTags) {
+				if(entry->tags[it] != Null) {
+					PushInstance(emptyChar, saveString);
+					Push(entry->tags[it], GetStringLength(entry->tags[it]), saveString);
+				}
+			}
+			const char* lineEnd = "\r\n";
+			Push((void*)lineEnd, GetStringLength(lineEnd), saveString);
+		}
+		SaveFile(saveString.memory, saveString.size, dataPath);
 		
 		goto program_exit;
 	}
@@ -449,12 +476,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 		goto program_exit;
 	}
 	
-	program_exit:
-	
-	// @TODO - Renable
-	if(IsValid(todosFile) == true)
-		FreeFile(todosFile);
-	
+	program_exit:	
 	printf("\n");
 	
 	return 0;
