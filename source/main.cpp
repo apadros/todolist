@@ -26,12 +26,14 @@ BeginEnum(ValidArgumentsIndex) { TaskString, DateAdded, DateDue, Tags, Length } 
 
 #include <stdio.h>
 #define PrintErrorExit(_string) { \
-	printf("ERROR: %s\n", _string); \
+	printf("\nERROR: %s\n", _string); \
 	goto program_exit; \
 }
 
+file todosFile;
 void ExitFunction() {
-	// @TODO
+	if(IsValid(todosFile) == true)
+		FreeFile(todosFile);
 }
 
 ConsoleAppEntryPoint(args, argsCount) {
@@ -39,8 +41,10 @@ ConsoleAppEntryPoint(args, argsCount) {
 	SetCallExitInAPIAssertions(true);
 	SetExitIfAssertionHit(true);
 	
+	RegisterExitFunction(ExitFunction); // @TODO - Test this works
+	
 	#ifdef APAD_DEBUG
-		#if 1
+		#if 0
 		char* debugArgs[] = { args[0], "add", "-s", "test task" };
 		args = debugArgs;
 		argsCount = GetArrayLength(debugArgs);	
@@ -48,13 +52,19 @@ ConsoleAppEntryPoint(args, argsCount) {
 	#endif
 	
 	if(argsCount == 1) {
-		printf("Usage: %s [add] [list] [del | delete] [mod | modify] [undo] [redo]\n\n", args[0]);
-		printf("Options\n");
-		printf("	%s  [<text string>]                 task text\n", (const char*)ValidArguments[ValidArgumentsIndex::TaskString]);
-		printf("	%s [dd/mm | dd/mm/yyyy]            date added\n", (const char*)ValidArguments[ValidArgumentsIndex::DateAdded]);
-		printf("	%s [dd/mm | dd/mm/yyyy | +ddd[w]]  date due\n", (const char*)ValidArguments[ValidArgumentsIndex::DateDue]);
-		printf("	%s  [<tags>...]                     string tags (up to 5)\n", (const char*)ValidArguments[ValidArgumentsIndex::Tags]);
-		// @TODO - Add what options can be specified with every command, figure out a simple way
+		printf("\nUsage: %s [<command>] [<options>]\n", args[0]);
+		printf("\n  Commands\n");
+		printf("      Add\n");
+		printf("      List\n");
+		
+		// @TODO - Have a custom message for each command and which options can be used with it
+		
+		printf("\n  Options\n");
+		printf("      %s  [<text string>]                 task text\n", (const char*)ValidArguments[ValidArgumentsIndex::TaskString]);
+		printf("      %s [dd/mm | dd/mm/yyyy]            date added\n", (const char*)ValidArguments[ValidArgumentsIndex::DateAdded]);
+		printf("      %s [dd/mm | dd/mm/yyyy | +ddd[w]]  date due\n", (const char*)ValidArguments[ValidArgumentsIndex::DateDue]);
+		printf("      %s  [<tags>...]                     string tags (up to 5)\n", (const char*)ValidArguments[ValidArgumentsIndex::Tags]);
+		
 		goto program_exit;
 	}
 	
@@ -78,7 +88,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 		}
 		
 		if(found == false)
-			PrintErrorExit("Invalid command\n");
+			PrintErrorExit("Invalid command");
 	}
 	
 	#define CheckArgsExit() { if(it >= argsCount) \
@@ -98,7 +108,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 			CheckArgsExit();
 			dateAdded = args[it];
 			if(IsDate(dateAdded) == false)
-				PrintErrorExit("Invalid date added specified\n");
+				PrintErrorExit("Invalid date added specified");
 		}
 		else if(StringsAreEqual(arg, ValidArguments[ValidArgumentsIndex::DateDue]) == true) {
 			it += 1;
@@ -106,7 +116,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 			dateDue = args[it];
 			
 			if(IsDate(dateAdded) == false)
-				PrintErrorExit("Invalid date due specified\n");
+				PrintErrorExit("Invalid date due specified");
 			
 			// Convert to long date format
 			dateDue = DateToString(StringToDate(dateDue)); // @TODO - Simplify this?
@@ -140,7 +150,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 				if(dateDue.length == 0)
 					dateDue = DateToString(GetDate(0));
 				else {
-					PrintErrorExit("Target date already supplied: %s\n", (char*)arg);
+					PrintErrorExit("Target date already supplied: %s", (char*)arg);
 					goto program_exit;
 				}
 			}
@@ -168,7 +178,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 					}
 				}
 				if(isValid == false) {
-					PrintErrorExit("Invalid day offset (max length allowed is 3)\n");
+					PrintErrorExit("Invalid day offset (max length allowed is 3)");
 					goto program_exit;
 				}
 				
@@ -192,7 +202,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 				else if(reschedulePeriod.length == 0)
 					reschedulePeriod = arg.chars + 1;
 				else {
-					PrintErrorExit("Reschedule period already supplied\n", (char*)arg);
+					PrintErrorExit("Reschedule period already supplied", (char*)arg);
 					goto program_exit;
 				}						
 			}
@@ -200,7 +210,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 				if(dateDue.length == 0)
 					dateDue = DateToString(StringToDate(arg)); // Conversion back and forth to set the standard date format dd/mm/yyyy
 				else {
-					PrintErrorExit("Target date already supplied\n", arg);
+					PrintErrorExit("Target date already supplied", arg);
 					goto program_exit;
 				}
 			}
@@ -209,7 +219,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 			if(arg[0] == '!' || arg[0] == '?' || arg[0] == '@')
 				flag = arg;
 			else {
-				PrintErrorExit("Invalid flag supplied: %s\n", (char*)arg);
+				PrintErrorExit("Invalid flag supplied: %s", (char*)arg);
 				goto program_exit;
 			}
 		}
@@ -217,7 +227,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 			it += 1;
 			
 			if(it == argsCount) {
-				PrintErrorExit("No tags specified\n");
+				PrintErrorExit("No tags specified");
 				goto program_exit;
 			}
 			
@@ -235,7 +245,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 				}
 				
 				if(added == false) {
-					PrintErrorExit("Number of tags exceeded, max 5\n");
+					PrintErrorExit("Number of tags exceeded, max 5");
 					goto program_exit;
 				}
 				
@@ -244,7 +254,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 			while(it < argsCount);
 		}
 		else { // Invalid argument
-			PrintErrorExit("Invalid argument: %s\n", (char*)arg);
+			PrintErrorExit("Invalid argument: %s", (char*)arg);
 			goto program_exit;
 		}
 		#endif
@@ -258,18 +268,18 @@ ConsoleAppEntryPoint(args, argsCount) {
 	
 	// Open the todos file and generate task list
 	struct todoListEntry {
-		char* task;
-		char* dateAdded;
-		char* dateDue;
-		char* tags[MaxTags];
+		char* task; 		 		 // Must have
+		char* dateAdded; 		 // Must have
+		char* dateDue; 	 		 // Can be Null
+		char* tags[MaxTags]; // Can all be Null
 	};
 	memory_stack todoList;
 	ui16 				 todosCount = 0;
 	{
 		if(FileExists(dataPath) == false)
-			PrintErrorExit("Couldn't find data/todos.txt\n");
+			PrintErrorExit("Couldn't find data/todos.txt");
 		
-		auto todosFile = LoadFile(dataPath);
+		todosFile = LoadFile(dataPath);
 		if(AssertionWasHit() == true)
 			PrintErrorExit("Couldn't load data/todos.txt");
 		
@@ -295,17 +305,19 @@ ConsoleAppEntryPoint(args, argsCount) {
 			else if(readingString == false && readingData == false) {
 				if(IsWhitespace(*c) == true)
 					*c = '\0';
-				else if(entry->dateAdded == Null) {
-					entry->dateAdded = c;
-					readingData = true;
-				}
-				else if(entry->dateDue == Null) {
-					entry->dateDue = c;
-					readingData = true;
-				}
-				else { // Tags
-					AddToArray(c, entry->tags, Null);
-					readingData = true;
+				else if(*c != '-') {
+					if(entry->dateAdded == Null) {
+						entry->dateAdded = c;
+						readingData = true;
+					}
+					else if(entry->dateDue == Null) {
+						entry->dateDue = c;
+						readingData = true;
+					}
+					else { // Tags
+						AddToArray(c, entry->tags, Null);
+						readingData = true;
+					}
 				}
 			}
 			else if(readingString == false && readingData == true && IsWhitespace(*c) == true) {
@@ -313,29 +325,13 @@ ConsoleAppEntryPoint(args, argsCount) {
 				readingData = false;
 			}
 		}
-		
-		FreeFile(todosFile);
 	}
 	
 	// Parse command, output error message if invalid
 	if(StringsAreEqual(command, ValidCommands[ValidCommandsIndex::Add]) == true) {
 		dateAdded = DateToString(GetDate(0));
 		
-		if(dateDue == Null)
-			dateDue = "-";
-				
-		const char* string = Concatenate(7, "\"", taskString, "\" ", dateAdded, " ", dateDue, " ");
-		if(tags[0] == Null)
-			string = Concatenate(2, string, "-");
-		else {
-			ForAll(MaxTags) {
-				if(tags[it] != Null)
-					string = Concatenate(4, string, "\"", tags[it], "\" ");
-			}
-		}
-		string = Concatenate(2, string, "\r\n"); 
-		
-		// Create new entry @WIP
+		// Create new entry
 		auto* entry = (todoListEntry*)Push(sizeof(todoListEntry), todoList);
 		todosCount += 1;
 		entry->task = (char*)taskString; 
@@ -349,21 +345,22 @@ ConsoleAppEntryPoint(args, argsCount) {
 		// Save to file
 		auto saveString = AllocateStack(Null);
 		ForAll(todosCount) {
-			auto* entry = (todoListEntry*)todoList.memory + it;
-			char emptyChar = ' '; // @TODO - Find a bettwe way of doing this -> API mods
-			Push(entry->task, GetStringLength(entry->task), saveString);
-			PushInstance(emptyChar, saveString);
-			Push(entry->dateAdded, GetStringLength(entry->dateAdded), saveString);
-			PushInstance(emptyChar, saveString);
-			Push(entry->dateDue, GetStringLength(entry->dateDue), saveString);
-			ForAll(MaxTags) {
-				if(entry->tags[it] != Null) {
-					PushInstance(emptyChar, saveString);
-					Push(entry->tags[it], GetStringLength(entry->tags[it]), saveString);
+			auto* entry = (todoListEntry*)todoList.memory + it;	
+			Assert(entry->task != Null);
+			Assert(entry->dateAdded != Null);
+			
+			const char* string = Concatenate(7, "\"", entry->task, "\" ", entry->dateAdded, " ", entry->dateDue == Null ? "-" : entry->dateDue, " ");
+			if(entry->tags[0] == Null)
+				string = Concatenate(2, string, "- ");
+			else {
+				ForAll(MaxTags) {
+					if(entry->tags[it] != Null)
+						string = Concatenate(4, string, "\"", entry->tags[it], "\" ");
 				}
 			}
-			const char* lineEnd = "\r\n";
-			Push((void*)lineEnd, GetStringLength(lineEnd), saveString);
+			string = Concatenate(2, string, "\r\n"); 
+			
+			Push((void*)string, GetStringLength(string), saveString);
 		}
 		SaveFile(saveString.memory, saveString.size, dataPath);
 		
@@ -472,7 +469,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 		// before and after, then display the updated entry will all info
 	}
 	else {
-		PrintErrorExit("Invalid command supplied.\n");
+		PrintErrorExit("Invalid command supplied.");
 		goto program_exit;
 	}
 	

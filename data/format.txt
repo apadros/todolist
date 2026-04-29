@@ -1,4 +1,4 @@
-[task text] [date added] [date due] [tags]\r\n
+[task text] [date added] [date due] [tags] \r\n
 
 [task text]  - "ASCII string between speech marks"
 [date added] - dd/mm/yyyy
