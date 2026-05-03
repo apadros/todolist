@@ -2,6 +2,10 @@ bool IsValidChar(char c) {
   return IsLetter(c) == true || IsNumber(c) == true || c == '\"' || c == '/' || c == '-' || c == '?' || c == '!' || c == '#';
 }
 
+bool TagIsValid(const char* tag) {
+	return tag != Null;
+}
+
 void PrintDetailedTask(const char* id, const char* task, const char* dateAdded, const char* dateDue, const char** tags) {
   // @TODO - Add assertions once program takes shape
 	// AssertRet(id != Null);

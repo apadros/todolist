@@ -11,11 +11,7 @@
 #include "apad_time.h"
 #include "apad_win32.h"
 
-const char* DateFormatShort  = "dd/mm";
-const char* DateFormatMedium = "dd/mm/yy";
-const char* DateFormatLong   = "dd/mm/yyyy";
-const ui8 	MaxTags = 5;
-
+const ui8 MaxTags = 5;
 #include "helpers.cpp"
 
 const char* ValidCommands[] = 	{ "add", "list", "del", "mod", "undo", "redo" };
@@ -277,7 +273,6 @@ ConsoleAppEntryPoint(args, argsCount) {
 		char* tags[MaxTags]; // Can all be Null
 	};
 	memory_stack todoList = AllocateStack();
-	ui16 				 todosCount = 0;
 	{
 		if(FileExists(dataPath) == false)
 			PrintErrorExit("Couldn't find data/todos.txt");
@@ -305,7 +300,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 			
 			FreeLine(line);
 		}
-	}
+	}	
 	
 	// Parse command, output error message if invalid
 	if(StringsAreEqual(command, ValidCommands[ValidCommandsIndex::Add]) == true) {
@@ -313,7 +308,6 @@ ConsoleAppEntryPoint(args, argsCount) {
 		
 		// Create new entry
 		auto* entry = (todoListEntry*)Push(sizeof(todoListEntry), todoList);
-		todosCount += 1;
 		entry->task = (char*)taskString; 
 		entry->dateAdded = (char*)dateAdded;
 		entry->dateDue = (char*)dateDue;
@@ -323,26 +317,26 @@ ConsoleAppEntryPoint(args, argsCount) {
 		PrintDetailedTask(Null, taskString, dateAdded, dateDue, tags);
 		
 		// Save to file
-		auto saveString = AllocateStack(Null);
-		ForAll(todosCount) {
+		auto file = CreateFile();
+		ForAll(todoList.size / sizeof(todoListEntry)) {
 			auto* entry = (todoListEntry*)todoList.memory + it;	
 			Assert(entry->task != Null);
 			Assert(entry->dateAdded != Null);
 			
-			const char* string = Concatenate(7, "\"", entry->task, "\" ", entry->dateAdded, " ", entry->dateDue == Null ? "-" : entry->dateDue, " ");
-			if(entry->tags[0] == Null)
-				string = Concatenate(2, string, "- ");
+			char* string = Concatenate(7, "\"", entry->task, "\" ", entry->dateAdded, " ", entry->dateDue == Null ? "-" : entry->dateDue, " ");
+			WriteToFile(string, file);
+			if(TagIsValid(entry->tags[0]) == false)
+				WriteToFile("- ", file);
 			else {
 				ForAll(MaxTags) {
-					if(entry->tags[it] != Null)
-						string = Concatenate(4, string, "\"", entry->tags[it], "\" ");
+					if(TagIsValid(entry->tags[it]) == true)
+						WriteToFile(Concatenate(3, "\"", entry->tags[it], "\" "), file);
 				}
 			}
-			string = Concatenate(2, string, "\r\n"); 
-			
-			Push((void*)string, GetStringLength(string), saveString);
+			WriteToFile("\r\n", file); 
 		}
-		SaveFile(saveString.memory, saveString.size, dataPath);
+		SaveFile(file.memory, file.size, dataPath);
+		FreeFile(file);
 		
 		goto program_exit;
 	}
