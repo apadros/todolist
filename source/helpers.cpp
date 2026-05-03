@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "helpers.h"
 
 bool IsValidChar(char c) {
   return IsLetter(c) == true || IsNumber(c) == true || c == '\"' || c == '/' || c == '-' || c == '?' || c == '!' || c == '#';
@@ -8,20 +9,16 @@ bool TagIsValid(const char* tag) {
 	return tag != Null;
 }
 
-void DisplayTaskStringHelpMessage() {
-	printf("   %s  [<text string>]                 task text\n", (const char*)ValidArguments[ValidArgumentsIndex::TaskString]);
-}
-
-void DisplayDateAddedHelpMessage() {
-	printf("   %s [dd/mm | dd/mm/yyyy]            date added\n", (const char*)ValidArguments[ValidArgumentsIndex::DateAdded]);
-}
-
-void DisplayDateDueHelpMessage() {
-	printf("   %s [dd/mm | dd/mm/yyyy | +ddd[w]]  date due\n", (const char*)ValidArguments[ValidArgumentsIndex::DateDue]);
-}
-
-void DisplayTagsHelpMessage() {
-	printf("   %s  [<tags>...]                     string tags (up to 5)\n", (const char*)ValidArguments[ValidArgumentsIndex::Tags]);
+void DisplayCommandOptions(bool taskString, bool dateAdded, bool dateDue, bool tags) {
+	printf("\n  Options\n");
+	if(taskString == true)
+		printf("    %s  [<text string>]                 task text\n", (const char*)ValidArguments[ValidArgumentsIndex::TaskString]);
+	if(dateAdded == true)
+		printf("    %s [dd/mm | dd/mm/yyyy]            date added\n", (const char*)ValidArguments[ValidArgumentsIndex::DateAdded]);
+	if(dateDue == true)
+		printf("    %s [dd/mm | dd/mm/yyyy | +ddd[w]]  date due\n", (const char*)ValidArguments[ValidArgumentsIndex::DateDue]);
+	if(tags == true)
+		printf("    %s  [<tags>...]                     string tags (up to 5)\n", (const char*)ValidArguments[ValidArgumentsIndex::Tags]);
 }
 
 void PrintDetailedTask(const char* id, const char* task, const char* dateAdded, const char* dateDue, const char** tags) {

@@ -11,8 +11,9 @@
 #include "apad_time.h"
 #include "apad_win32.h"
 
+#include "helpers.h"
+
 const ui8 MaxTags = 5;
-#include "helpers.cpp"
 
 const char* ValidCommands[] = 	{ "add", "list", "del", "mod", "undo", "redo" };
 BeginEnum(ValidCommandsIndex) { Add, List, Delete, Modify, Undo, Redo, Length } EndEnum(ValidCommandsIndex);
@@ -20,14 +21,7 @@ BeginEnum(ValidCommandsIndex) { Add, List, Delete, Modify, Undo, Redo, Length } 
 const char* ValidArguments[] =   { "-s", "-da", "-dd", "-t" };
 BeginEnum(ValidArgumentsIndex) { TaskString, DateAdded, DateDue, Tags, Length } EndEnum(ValidArgumentsIndex);
 
-#include <stdio.h>
-##define PrintError(_string) \
-	printf("\nERROR: %s\n", _string)
-	
-#define PrintErrorExit(_string) { \
-	PrintError(_string); \
-	goto program_exit; \
-}
+#include "helpers.cpp"
 
 file todosFile;
 void ExitFunction() {
@@ -40,7 +34,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 	SetCallExitInAPIAssertions(true);
 	SetExitIfAssertionHit(true);
 	
-	RegisterExitFunction(ExitFunction); // @TODO - Test this works
+	RegisterExitFunction(ExitFunction);
 	
 	#ifdef APAD_DEBUG
 		#if 0
@@ -51,22 +45,11 @@ ConsoleAppEntryPoint(args, argsCount) {
 	#endif
 	
 	// Initial help message
-	if(argsCount <= 2) {
+	if(argsCount == 1) {
 		printf("\nUsage: %s [<command>] [<options>]\n", args[0]);
 		printf("\n  Commands\n");
 		printf("      Add\n");
 		printf("      List\n");
-		
-		// @TODO - Have a custom message for each command and which options can be used with it
-		
-		#if 0
-		printf("\n  Options\n");
-		printf("      %s  [<text string>]                 task text\n", (const char*)ValidArguments[ValidArgumentsIndex::TaskString]);
-		printf("      %s [dd/mm | dd/mm/yyyy]            date added\n", (const char*)ValidArguments[ValidArgumentsIndex::DateAdded]);
-		printf("      %s [dd/mm | dd/mm/yyyy | +ddd[w]]  date due\n", (const char*)ValidArguments[ValidArgumentsIndex::DateDue]);
-		printf("      %s  [<tags>...]                     string tags (up to 5)\n", (const char*)ValidArguments[ValidArgumentsIndex::Tags]);
-		#endif
-		
 		goto program_exit;
 	}
 	
@@ -266,24 +249,15 @@ ConsoleAppEntryPoint(args, argsCount) {
 	}	
 	
 	// Check command arguments and possibly display help message
-	if(StringsAreEqual(command, ValidCommands[ValidCommandsIndex::Add]) == true) {
-		bool displayUsage = false;
-		
-		if(taskString == Null) {
-			PrintError("Add command requires at least a task string");
-			displayUsage = true;
-		}
-		
-		if(argsCount == 2) // todos add
-		  displayUsage = true;
-		
-		if(displayUsage == true) {
-			printf("\n Options\n");
-			printf("     %s  [<text string>]                 task text\n", (const char*)ValidArguments[ValidArgumentsIndex::TaskString]);
-			printf("     %s [dd/mm | dd/mm/yyyy]            date added\n", (const char*)ValidArguments[ValidArgumentsIndex::DateAdded]);
-			printf("     %s [dd/mm | dd/mm/yyyy | +ddd[w]]  date due\n", (const char*)ValidArguments[ValidArgumentsIndex::DateDue]);
-			printf("     %s  [<tags>...]                     string tags (up to 5)\n", (const char*)ValidArguments[ValidArgumentsIndex::Tags]);
-		}
+	if(StringsAreEqual(command, ValidCommands[ValidCommandsIndex::Add]) == true && taskString == Null) {
+		printf("\nUsage: %s %s -s [task string] [<options>]\n", args[0], command);
+		DisplayCommandOptions(false, false, true, true);
+		goto program_exit;
+	}
+	else if(StringsAreEqual(command, ValidCommands[ValidCommandsIndex::List]) == true && argsCount == 2) {
+		printf("\nUsage: %s %s [<options>]\n", args[0], command);
+		DisplayCommandOptions(true, true, true, true);
+		goto program_exit;
 	}
 	
 	#ifdef APAD_DEBUG
@@ -368,6 +342,10 @@ ConsoleAppEntryPoint(args, argsCount) {
 		goto program_exit;
 	}
 	else if(StringsAreEqual(command, ValidCommands[ValidCommandsIndex::List]) == true) {
+		ForAll(todoList.size / sizeof(todoListEntry)) {
+			
+		}
+		
 		// @TODO
 		// By string, ID, flags & tags, - means not
 		// <60 days & >60 days

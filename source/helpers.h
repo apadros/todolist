@@ -3,13 +3,18 @@
 
 #include "apad_base_types.h"
 
+#include <stdio.h>
+#define PrintError(_string) \
+	printf("\nERROR: %s\n", _string)
+	
+#define PrintErrorExit(_string) { \
+	PrintError(_string); \
+	goto program_exit; \
+}
+
 bool IsValidChar(char c);
 bool TagIsValid(const char* tag);
 void PrintDetailedTask(const char* id, const char* task, const char* dateAdded, const char* dateDue, const char** tags);
-
-void DisplayTaskStringHelpMessage();
-void DisplayDateAddedHelpMessage();
-void DisplayDateDueHelpMessage();
-void DisplayTagsHelpMessage();
+void DisplayCommandOptions(bool taskString, bool dateAdded, bool dateDue, bool tags);
 
 #endif
