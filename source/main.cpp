@@ -37,8 +37,8 @@ ConsoleAppEntryPoint(args, argsCount) {
 	RegisterExitFunction(ExitFunction);
 	
 	#ifdef APAD_DEBUG
-		#if 0
-		char* debugArgs[] = { args[0], "add", "-s", "task x", "-t", "tag1", "tag2", "tag3", "-dd", "05/07" };
+		#if 1
+		char* debugArgs[] = { args[0], "list", "alltags" };
 		args = debugArgs;
 		argsCount = GetArrayLength(debugArgs);	
 		#endif
@@ -84,7 +84,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 	FromTo(2, argsCount) {
 		const char* arg = args[it];
 		
-		if(it == 2 && StringsAreEqual(command, ValidCommands[ValidCommandsIndex::List]) == true && StringsAreEqual(arg, "all") == true) {
+		if(it == 2 && StringsAreEqual(command, ValidCommands[ValidCommandsIndex::List]) == true && (StringsAreEqual(arg, "all") == true || StringsAreEqual(arg, "alltags") == true)) {
 			specialCommand = arg;
 			break;
 		}
@@ -263,6 +263,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 		printf("\nUsage: %s %s [<options>]\n", args[0], command);
 		DisplayCommandOptions(true, true, true, true);
 		printf("    all                                 list all\n", (const char*)ValidArguments[ValidArgumentsIndex::TaskString]);
+		printf("    alltags                             list all existing tags\n", (const char*)ValidArguments[ValidArgumentsIndex::TaskString]);
 		goto program_exit;
 	}
 	
@@ -348,30 +349,72 @@ ConsoleAppEntryPoint(args, argsCount) {
 		goto program_exit;
 	}
 	else if(StringsAreEqual(command, ValidCommands[ValidCommandsIndex::List]) == true) {
-		bool printAll = specialCommand != Null && StringsAreEqual(specialCommand, "all") == true;
-		TodoEntriesLoop(todoList) {
-			auto* entry = GetTodosEntry(todoList, it);
-			
-			if(printAll == true)
+		if(specialCommand != Null && StringsAreEqual(specialCommand, "all") == true) { // Print all
+			TodoEntriesLoop(todoList) {
+				auto* entry = GetTodosEntry(todoList, it);
 				PrintDetailedTask(Null /* @TODO */, entry->task, entry->dateAdded, entry->dateDue, (const char**)entry->tags);
-			else if(taskString != Null) {
-				ConvertStringToLowerCase(taskString);
+			}
+		}
+		else if(specialCommand != Null && StringsAreEqual(specialCommand, "alltags") == true) { // Print all tags
+			auto printedTags = AllocateStack();
+			TodoEntriesLoop(todoList) {
+				auto* entry = GetTodosEntry(todoList, it);
+				ForAll(MaxTags) {
+					auto* tag = entry->tags[it];
+					if(TagIsValid(tag) == true) {
+						// Check if already printed
+						bool printed = false;
+						ForAll(printedTags.size / sizeof(char*)) {
+							char* t = ((char**)printedTags.memory)[it];
+							printed = StringsAreEqual(t, tag);
+							if(printed == true)
+								break;
+						}
+						
+						if(printed == false) {
+							if(printedTags.size < sizeof(char*)) // Print first tag
+								printf("  Tags: %s\n", (char*)tag);
+							else
+								printf("        %s\n", (char*)tag);
+							Push(&tag, sizeof(char*), printedTags);
+						}
+					}
+				}
+			}
+			FreeStack(printedTags);
+		}
+		else {		
+			TodoEntriesLoop(todoList) {
+				auto* entry = GetTodosEntry(todoList, it);
 				
-				auto entryTaskString = AllocateString(entry->task, Null);
-				ConvertStringToLowerCase(entryTaskString);
+				if(taskString != Null) {
+					ConvertStringToLowerCase(taskString);
+					
+					auto entryTaskString = AllocateString(entry->task, Null);
+					ConvertStringToLowerCase(entryTaskString);
+					
+					if(FindSubstring(taskString, entryTaskString) != Null)
+						PrintDetailedTask(Null /* @TODO */, entry->task, entry->dateAdded, entry->dateDue, (const char**)entry->tags);
+				}
+				if(dateAdded != Null) {
+					if(FindSubstring(dateAdded, entry->dateAdded) != Null)
+						PrintDetailedTask(Null /* @TODO */, entry->task, entry->dateAdded, entry->dateDue, (const char**)entry->tags);
+				}
+				if(dateDue != Null) {
+					if(FindSubstring(dateDue, entry->dateDue) != Null)
+						PrintDetailedTask(Null /* @TODO */, entry->task, entry->dateAdded, entry->dateDue, (const char**)entry->tags);
+				}
 				
-				if(FindSubstring(taskString, entryTaskString) != Null)
-					PrintDetailedTask(Null /* @TODO */, entry->task, entry->dateAdded, entry->dateDue, (const char**)entry->tags);
+				ForAll(MaxTags) {
+					const char* tag = tags[it];
+					if(TagIsValid(tag) == true) {
+						ForAll(MaxTags) {
+							if(TagIsValid(entry->tags[it]) == true && StringsAreEqual(tag, entry->tags[it]) == true)
+								PrintDetailedTask(Null /* @TODO */, entry->task, entry->dateAdded, entry->dateDue, (const char**)entry->tags);
+						}
+					}
+				}
 			}
-			if(dateAdded != Null) {
-				if(FindSubstring(dateAdded, entry->dateAdded) != Null)
-					PrintDetailedTask(Null /* @TODO */, entry->task, entry->dateAdded, entry->dateDue, (const char**)entry->tags);
-			}
-			if(dateDue != Null) {
-				if(FindSubstring(dateDue, entry->dateDue) != Null)
-					PrintDetailedTask(Null /* @TODO */, entry->task, entry->dateAdded, entry->dateDue, (const char**)entry->tags);
-			}
-			// @TODO - Tags
 		}
 		
 		// @TODO

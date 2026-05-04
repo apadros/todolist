@@ -4,8 +4,8 @@ Key
 	
 Core commands
 	- Add
-	 - Error message in case of wrong / insufficient args @WIP
-	- List
+	 - Avoid storing repeated tags - check for duplicates
+	- List @WIP
 		- Add support for 'all' as a specific argument for this command
 			- todos list all
 		- Printing based on arguments as filters @WIP
@@ -35,7 +35,6 @@ Dates
 	- Checking whether it actually exists. E.g. 30th February
 		
 Tags
-	- Command to list all existing tags
 	- How to add / remove tags from already-present tasks?
 		
 Task file
