@@ -24,12 +24,6 @@ Core commands
 	- Help message - same as not supplying args
 	- Custom help message with relevant options for each command
 	
-Command arguments
-	- Task string (-s)
-	- Date added (-da)
-	- Date due (-dd)
-	- Tages (-t)
-
 Testbench / testbenches
 
 Dates
@@ -41,7 +35,7 @@ Dates
 	- Checking whether it actually exists. E.g. 30th February
 		
 Tags
-	- Command to list all established groups / tags
+	- Command to list all existing tags
 	- How to add / remove tags from already-present tasks?
 		
 Task file

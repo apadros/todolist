@@ -60,6 +60,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 	const char* dateAdded = Null;
 	const char* dateDue = Null;
 	const char* tags[MaxTags] = { Null };
+	const char* specialCommand = Null;
 
 	// Parse and check command
 	command = args[1];
@@ -83,7 +84,11 @@ ConsoleAppEntryPoint(args, argsCount) {
 	FromTo(2, argsCount) {
 		const char* arg = args[it];
 		
-		if(StringsAreEqual(arg, ValidArguments[ValidArgumentsIndex::TaskString]) == true) {
+		if(it == 2 && StringsAreEqual(command, ValidCommands[ValidCommandsIndex::List]) == true && StringsAreEqual(arg, "all") == true) {
+			specialCommand = arg;
+			break;
+		}
+		else if(StringsAreEqual(arg, ValidArguments[ValidArgumentsIndex::TaskString]) == true) {
 			it += 1;
 			CheckArgsExit();
 			taskString = args[it];
@@ -254,9 +259,10 @@ ConsoleAppEntryPoint(args, argsCount) {
 		DisplayCommandOptions(false, false, true, true);
 		goto program_exit;
 	}
-	else if(StringsAreEqual(command, ValidCommands[ValidCommandsIndex::List]) == true && argsCount == 2) {
+	else if(StringsAreEqual(command, ValidCommands[ValidCommandsIndex::List]) == true && argsCount == 2 && specialCommand == Null) {
 		printf("\nUsage: %s %s [<options>]\n", args[0], command);
 		DisplayCommandOptions(true, true, true, true);
+		printf("    all                                 list all\n", (const char*)ValidArguments[ValidArgumentsIndex::TaskString]);
 		goto program_exit;
 	}
 	
@@ -342,10 +348,13 @@ ConsoleAppEntryPoint(args, argsCount) {
 		goto program_exit;
 	}
 	else if(StringsAreEqual(command, ValidCommands[ValidCommandsIndex::List]) == true) {
+		bool printAll = specialCommand != Null && StringsAreEqual(specialCommand, "all") == true;
 		TodoEntriesLoop(todoList) {
 			auto* entry = GetTodosEntry(todoList, it);
 			
-			if(taskString != Null) {
+			if(printAll == true)
+				PrintDetailedTask(Null /* @TODO */, entry->task, entry->dateAdded, entry->dateDue, (const char**)entry->tags);
+			else if(taskString != Null) {
 				ConvertStringToLowerCase(taskString);
 				
 				auto entryTaskString = AllocateString(entry->task, Null);
