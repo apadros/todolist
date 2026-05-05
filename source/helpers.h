@@ -27,8 +27,9 @@ struct todoListEntry {
 #define GetTodosEntry(_todoList, _it) (((todoListEntry*)(_todoList).memory) + it)
 
 bool IsValidChar(char c);
+bool AnyTagsPresent(char** tags);
 bool TagIsValid(const char* tag);
-void PrintDetailedTask(ui16 id, const char* task, const char* dateAdded, const char* dateDue, const char** tags);
+void PrintDetailedTask(ui16 id, char* task, char* dateAdded, char* dateDue, char** tags);
 void DisplayCommandOptions(bool id, bool taskString, bool dateAdded, bool dateDue, bool tags);
 void SaveChangesToTodosFile(memory_stack& todoList, const char* dataPath);
 

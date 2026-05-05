@@ -353,7 +353,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 		Assert(sizeof(tags) == sizeof(entry->tags));
 		CopyMemory(tags, sizeof(tags), entry->tags);
 		printf("\nTask added\n");
-		PrintDetailedTask(entry->ID, entry->task, entry->dateAdded, entry->dateDue, (const char**)entry->tags);
+		PrintDetailedTask(entry->ID, entry->task, entry->dateAdded, entry->dateDue, (char**)entry->tags);
 		
 		SaveChangesToTodosFile(todoList, dataPath);
 		
@@ -363,7 +363,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 		if(specialCommand != Null && StringsAreEqual(specialCommand, "all") == true) { // Print all
 			TodoEntriesLoop(todoList) {
 				auto* entry = GetTodosEntry(todoList, it);
-				PrintDetailedTask(entry->ID, entry->task, entry->dateAdded, entry->dateDue, (const char**)entry->tags);
+				PrintDetailedTask(entry->ID, entry->task, entry->dateAdded, entry->dateDue, (char**)entry->tags);
 			}
 		}
 		else if(specialCommand != Null && StringsAreEqual(specialCommand, "alltags") == true) { // Print all tags
@@ -404,7 +404,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 				bool printed = false;
 				
 				if(id != Null && ID == entry->ID) {
-					PrintDetailedTask(entry->ID, entry->task, entry->dateAdded, entry->dateDue, (const char**)entry->tags);
+					PrintDetailedTask(entry->ID, entry->task, entry->dateAdded, entry->dateDue, (char**)entry->tags);
 					printed = true;
 				}
 				
@@ -415,21 +415,21 @@ ConsoleAppEntryPoint(args, argsCount) {
 					ConvertStringToLowerCase(entryTaskString);
 					
 					if(FindSubstring(taskString, entryTaskString) != Null) {
-						PrintDetailedTask(entry->ID, entry->task, entry->dateAdded, entry->dateDue, (const char**)entry->tags);
+						PrintDetailedTask(entry->ID, entry->task, entry->dateAdded, entry->dateDue, (char**)entry->tags);
 						printed = true;
 					}
 				}
 				
 				if(printed == false && dateAdded != Null) {
 					if(FindSubstring(dateAdded, entry->dateAdded) != Null) {
-						PrintDetailedTask(entry->ID, entry->task, entry->dateAdded, entry->dateDue, (const char**)entry->tags);
+						PrintDetailedTask(entry->ID, entry->task, entry->dateAdded, entry->dateDue, (char**)entry->tags);
 						printed = true;
 					}
 				}
 				
 				if(printed == false && dateDue != Null) {
 					if(FindSubstring(dateDue, entry->dateDue) != Null) {
-						PrintDetailedTask(entry->ID, entry->task, entry->dateAdded, entry->dateDue, (const char**)entry->tags);
+						PrintDetailedTask(entry->ID, entry->task, entry->dateAdded, entry->dateDue, (char**)entry->tags);
 						printed = true;
 					}
 				}
@@ -440,7 +440,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 						if(TagIsValid(tag) == true) {
 							ForAll(MaxTags) {
 								if(TagIsValid(entry->tags[it]) == true && StringsAreEqual(tag, entry->tags[it]) == true)
-									PrintDetailedTask(entry->ID, entry->task, entry->dateAdded, entry->dateDue, (const char**)entry->tags);
+									PrintDetailedTask(entry->ID, entry->task, entry->dateAdded, entry->dateDue, (char**)entry->tags);
 							}
 						}
 					}
@@ -462,14 +462,26 @@ ConsoleAppEntryPoint(args, argsCount) {
 				if(taskString != Null) {
 					entry->task = (char*)taskString;
 					printf("\nUpdated task text\n");
-					PrintDetailedTask(entry->ID, entry->task, entry->dateAdded, entry->dateDue, (const char**)entry->tags);
+					PrintDetailedTask(entry->ID, entry->task, entry->dateAdded, entry->dateDue, (char**)entry->tags);
 					modded = true;
 				}
 				
-				// @WIP
-				//  - How to add / remove tags from already-present tasks?
-				//    - Might need special switches - e.g. todos mod -id x -t1 (specify tag 1) " tag "
-				//      - -t means tags in general, tx means xth tag
+				if(dateDue != Null) {
+					entry->dateDue = (char*)dateDue;
+					printf("\nUpdated date due\n");
+					PrintDetailedTask(entry->ID, entry->task, entry->dateAdded, entry->dateDue, (char**)entry->tags);
+					modded = true;
+				}
+				
+				if(AnyTagsPresent((char**)tags) == true) {
+					ForAll(MaxTags) {
+						if(TagIsValid(tags[it]) == true)
+							entry->tags[it] = (char*)tags[it];
+					}
+					printf("\nUpdated tags\n");
+					PrintDetailedTask(entry->ID, entry->task, entry->dateAdded, entry->dateDue, (char**)entry->tags);
+					modded = true;
+				}
 				
 				break;
 			}

@@ -12,10 +12,7 @@ Core commands
 	- Reschedule
 		- Testing
 	- Modify @WIP
-		- How to add / remove tags from already-present tasks?
-			- Might need special switches - e.g. todos mod -id x -t1 (specify tag 1) " tag "
-				- -t means tags in general, tx means xth tag
-		- Testing
+		- Remove tags from existing tasks
 	- Undo
 		- Testing
 	- Redo
