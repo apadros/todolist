@@ -7,7 +7,6 @@ Core commands
 	 - Avoid storing repeated tags - check for duplicates
 	- List
 		- Printing tasks 'wide'
-	- Delete
 	- Undo
 		- Testing
 	- Redo

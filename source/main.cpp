@@ -36,7 +36,7 @@ ConsoleAppEntryPoint(args, argsCount) {
 	
 	#ifdef APAD_DEBUG
 		#if 0
-		char* debugArgs[] = { args[0], "mod", "-id", "8", "-t1", "" };
+		char* debugArgs[] = { args[0], "del", "-id", "6" };
 		args = debugArgs;
 		argsCount = GetArrayLength(debugArgs);	
 		#endif
@@ -299,6 +299,10 @@ ConsoleAppEntryPoint(args, argsCount) {
 		DisplayCommandOptions(false, true, false, true, true);
 		goto program_exit;
 	}
+	else if(StringsAreEqual(command, ValidCommands[ValidCommandsIndex::Delete]) == true && id == Null) {
+		printf("\nUsage: %s %s -id [id]\n", args[0], command);
+		goto program_exit;
+	}
 	
 	#ifdef APAD_DEBUG
 	const char* dataPath = "..\\..\\data\\todos.txt";
@@ -494,10 +498,30 @@ ConsoleAppEntryPoint(args, argsCount) {
 		if(modded == true)
 			SaveChangesToTodosFile(todoList, dataPath);		
 	}
-	else {
-		PrintErrorExit("Invalid command supplied.");
-		goto program_exit;
+	else if(StringsAreEqual(command, ValidCommands[ValidCommandsIndex::Delete]) == true) {
+		Assert(id != Null);
+		guid ID = StringToInt(id, Null);
+		TodoEntriesLoop(todoList) {
+			auto* entry = GetTodosEntry(todoList, it);
+			if(entry->ID == ID) {
+				ClearMemory(entry, sizeof(todoListEntry));
+				void* dataStart = entry + 1;
+				void* dataEnd = (ui8*)todoList.memory + todoList.size;
+				if(dataStart != dataEnd) { // Would be the case for the very last entry
+					CopyMemory(dataStart, (ui32)((ui8*)dataEnd - (ui8*)dataStart), (void*)entry);
+					ClearMemory((void*)((ui8*)dataEnd - sizeof(todoListEntry)), sizeof(todoListEntry));
+				}
+				todoList.size -= sizeof(todoListEntry);
+				
+				printf("\nTodo no. %u deleted\n", ID);
+				SaveChangesToTodosFile(todoList, dataPath);
+				
+				break;
+			}
+		}		
 	}
+	else
+		PrintErrorExit("Invalid command supplied.");
 	
 	program_exit:	
 	printf("\n");
